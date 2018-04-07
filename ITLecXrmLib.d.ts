@@ -3,7 +3,6 @@
 declare namespace ITLecXrm {
     function getXrm(): Xrm.XrmStatic;
     function getJSON(): any;
-    function getMscrm(): void;
 }
 declare namespace ITLecXrm {
     namespace JS {
@@ -19,9 +18,15 @@ declare namespace ITLecXrm {
     }
 }
 declare namespace ITLecXrm {
+    namespace Helper {
+        namespace StringFacade {
+            function getRandomId(): string;
+        }
+    }
+}
+declare namespace ITLecXrm {
     namespace URL {
         function getClientURL(): string;
-        function getOrganizationDataSvc(): string;
         function getOdataURL(): string;
         function getAllEntitiesLogicalNameAPIUrl(): string;
         function getViewAPIUrl(viewName: any): string;
@@ -54,6 +59,11 @@ declare namespace ITLecXrm {
 declare namespace ITLecXrm {
     namespace Converter {
         function convertFromLogicalNameToObjectTypeCode(logicalName: string): string;
+    }
+}
+declare namespace ITLecXrm {
+    namespace WebResource {
+        function getParam(paramName: string): string;
     }
 }
 declare namespace ITLecXrm {
@@ -121,5 +131,28 @@ declare namespace ITLecXrm {
         namespace FetchXml {
             function executeFetchXml(fetchXmlStr: string): void;
         }
+    }
+}
+declare namespace ITLecXrm {
+    namespace Ribbon {
+        class Menu {
+            constructor(key: string, text: string, subMenu: Menu[], menuAction: MenuAction);
+            Key: string;
+            Text: string;
+            SubMenus: Menu[];
+            MenuAction: MenuAction;
+        }
+        class MenuAction {
+            constructor(functionName: string, _arg?: any);
+            FunctionName: string;
+            arg: any;
+        }
+    }
+}
+declare namespace ITLecXrm {
+    namespace Ribbon {
+        function generateMenu(populateQueryCommand: string, menuArr: Menu[], nodeName?: string): string;
+        function testGenerateMenu(commandProperties: any): void;
+        function OnClick(commandProperties: any): void;
     }
 }
