@@ -769,19 +769,19 @@ var ITLecXrm;
         Ribbon.generateMenu = generateMenu;
         function testGenerateMenu(commandProperties) {
             debugger;
-            var __menu = new Ribbon.Menu("FirstMenu", "FirstMenu", null, new Ribbon.MenuAction("itlec.itlec_test.itemClickedXrm.Command"));
-            var __menu2 = new Ribbon.Menu("FirstMenu2", "FirstMenu2", null, new Ribbon.MenuAction("itlec.itlec_test.itemClickedXrm.Command"));
+            var __menu = new ITLecXrm.Ribbon.Menu("FirstMenu", "FirstMenu", null, new ITLecXrm.Ribbon.MenuAction("itlec.DynamicButtons.Command"));
+            var __menu2 = new ITLecXrm.Ribbon.Menu("FirstMenu2", "FirstMenu2", null, new ITLecXrm.Ribbon.MenuAction("itlec.DynamicButtons.Command"));
             var _menuArr = [
                 __menu,
                 __menu2
             ];
-            var _menu = new Ribbon.Menu("FirstMenu", "FirstMenu", null, new Ribbon.MenuAction("itlec.itlec_test.itemClickedXrm.Command"));
-            var _menu2 = new Ribbon.Menu("FirstMenu2", "FirstMenu2", _menuArr, new Ribbon.MenuAction("itlec.itlec_test.itemClickedXrm.Command"));
+            var _menu = new ITLecXrm.Ribbon.Menu("FirstMenu", "FirstMenu", null, new ITLecXrm.Ribbon.MenuAction("itlec.DynamicButtons.Command"));
+            var _menu2 = new ITLecXrm.Ribbon.Menu("FirstMenu2", "FirstMenu2", _menuArr, new ITLecXrm.Ribbon.MenuAction("itlec.DynamicButtons.Command"));
             var menuArr = [
                 _menu,
                 _menu2
             ];
-            var menuStr = generateMenu("itlec.populateQueryCommand", menuArr, "main");
+            var menuStr = ITLecXrm.Ribbon.generateMenu("itlec.PopulateDynamicQuery.Command", menuArr, "main");
             alert(menuStr);
             commandProperties["PopulationXML"] = menuStr;
         }
