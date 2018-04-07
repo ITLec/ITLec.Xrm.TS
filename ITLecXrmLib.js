@@ -16,11 +16,6 @@ var ITLecXrm;
     function WindowParent() {
         return window.parent;
     }
-    function getMscrm() {
-        throw new Error('Not Implemented yet.');
-        //  return typeof Mscrm != "undefined" && typeof Mscrm.Utilities != "undefined" ? Mscrm : ITLecXrm.WindowParent().Mscrm;
-    }
-    ITLecXrm.getMscrm = getMscrm;
 })(ITLecXrm || (ITLecXrm = {}));
 var ITLecXrm;
 (function (ITLecXrm) {
@@ -53,6 +48,23 @@ var ITLecXrm;
         })(NumberUtil = JS.NumberUtil || (JS.NumberUtil = {}));
     })(JS = ITLecXrm.JS || (ITLecXrm.JS = {}));
 })(ITLecXrm || (ITLecXrm = {}));
+var ITLecXrm;
+(function (ITLecXrm) {
+    var Helper;
+    (function (Helper) {
+        var StringFacade;
+        (function (StringFacade) {
+            function getRandomId() {
+                var text = "";
+                var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+                for (var i = 0; i < 5; i++)
+                    text += possible.charAt(Math.floor(Math.random() * possible.length));
+                return text;
+            }
+            StringFacade.getRandomId = getRandomId;
+        })(StringFacade = Helper.StringFacade || (Helper.StringFacade = {}));
+    })(Helper = ITLecXrm.Helper || (ITLecXrm.Helper = {}));
+})(ITLecXrm || (ITLecXrm = {}));
 /// <reference path="itlecxrm.ts" />
 var ITLecXrm;
 /// <reference path="itlecxrm.ts" />
@@ -65,12 +77,13 @@ var ITLecXrm;
             return crmUrl;
         }
         URL.getClientURL = getClientURL;
-        function getOrganizationDataSvc() {
+        /* Not Supported
+        export function getOrganizationDataSvc(): string{
+
             var serverUrl = getClientURL();
             var oDataPath = serverUrl + "/XRMServices/2011/OrganizationData.svc";
             return oDataPath;
-        }
-        URL.getOrganizationDataSvc = getOrganizationDataSvc;
+        }*/
         function getOdataURL() {
             var serverURL = getClientURL();
             var url = serverURL + "/api/data/v8.0";
@@ -283,6 +296,53 @@ var ITLecXrm;
         }
         Converter.convertFromLogicalNameToObjectTypeCode = convertFromLogicalNameToObjectTypeCode;
     })(Converter = ITLecXrm.Converter || (ITLecXrm.Converter = {}));
+})(ITLecXrm || (ITLecXrm = {}));
+/// <reference path="tsdefination/index.d.ts" />
+/// <reference path="itlecxrm.ts" />
+/// <reference path="url.ts" />
+/// <reference path="tsdefination/lib.d.ts" />
+var ITLecXrm;
+/// <reference path="tsdefination/index.d.ts" />
+/// <reference path="itlecxrm.ts" />
+/// <reference path="url.ts" />
+/// <reference path="tsdefination/lib.d.ts" />
+(function (ITLecXrm) {
+    var WebResource;
+    (function (WebResource) {
+        function getParam(paramName) {
+            var retVal = "";
+            var vals = new Array();
+            if (location.search != "") {
+                vals = location.search.substr(1).split("&");
+                for (var i in vals) {
+                    vals[i] = vals[i].replace(/\+/g, " ").split("=");
+                }
+                //look for the parameter named 'data'
+                for (var i in vals) {
+                    if (vals[i][0].toLowerCase() == "data") {
+                        retVal = _parseDataValue(vals[i][1], paramName);
+                        break;
+                    }
+                }
+            }
+            return retVal;
+        }
+        WebResource.getParam = getParam;
+        function _parseDataValue(datavalue, paramName) {
+            var retVal = "";
+            if (datavalue != "") {
+                var vals = new Array();
+                vals = decodeURIComponent(datavalue).split("&");
+                for (var i in vals) {
+                    vals[i] = vals[i].replace(/\+/g, " ").split("=");
+                    if (vals[i][0] == paramName) {
+                        return vals[i][1];
+                    }
+                }
+            }
+            return retVal;
+        }
+    })(WebResource = ITLecXrm.WebResource || (ITLecXrm.WebResource = {}));
 })(ITLecXrm || (ITLecXrm = {}));
 /// <reference path="../tsdefination/index.d.ts" />
 /// <reference path="../itlecxrm.ts" />
@@ -649,5 +709,89 @@ var ITLecXrm;
             FetchXml.executeFetchXml = executeFetchXml;
         })(FetchXml = Xml.FetchXml || (Xml.FetchXml = {}));
     })(Xml = ITLecXrm.Xml || (ITLecXrm.Xml = {}));
+})(ITLecXrm || (ITLecXrm = {}));
+var ITLecXrm;
+(function (ITLecXrm) {
+    var Ribbon;
+    (function (Ribbon) {
+        var Menu = /** @class */ (function () {
+            function Menu(key, text, subMenu, menuAction) {
+                this.Key = key;
+                this.MenuAction = menuAction;
+                this.SubMenus = subMenu;
+                this.Text = text;
+            }
+            return Menu;
+        }());
+        Ribbon.Menu = Menu;
+        var MenuAction = /** @class */ (function () {
+            function MenuAction(functionName, _arg) {
+                this.FunctionName = functionName;
+                this.arg = _arg;
+            }
+            return MenuAction;
+        }());
+        Ribbon.MenuAction = MenuAction;
+    })(Ribbon = ITLecXrm.Ribbon || (ITLecXrm.Ribbon = {}));
+})(ITLecXrm || (ITLecXrm = {}));
+/// <reference path="itlecxrm.ribbon.menu.ts" />
+/// <reference path="../helper/stringfacade.ts" />
+var ITLecXrm;
+/// <reference path="itlecxrm.ribbon.menu.ts" />
+/// <reference path="../helper/stringfacade.ts" />
+(function (ITLecXrm) {
+    var Ribbon;
+    (function (Ribbon) {
+        function generateMenu(populateQueryCommand, menuArr, nodeName) {
+            if (!nodeName) {
+                nodeName = ITLecXrm.Helper.StringFacade.getRandomId();
+            }
+            var retValue = '';
+            retValue = retValue + ("<Menu Id=\"menu" + nodeName + "\"> ");
+            retValue = retValue + ("     <MenuSection Id=\"menuSection" + nodeName + "\"> ");
+            retValue = retValue + ("         <Controls Id=\"controls" + nodeName + "\">  ");
+            for (var _i = 0, menuArr_1 = menuArr; _i < menuArr_1.length; _i++) {
+                var item = menuArr_1[_i];
+                if (item.SubMenus && item.SubMenus.length > 0) {
+                    retValue = retValue + ("<FlyoutAnchor Command=\"Mscrm.Enabled\" Id=\"" + item.Key + "\"  PopulateDynamically=\"true\" PopulateQueryCommand=\"" + populateQueryCommand + "\"  LabelText=\"" + item.Text + "\" >");
+                    retValue = retValue + generateMenu(populateQueryCommand, item.SubMenus, item.Key);
+                    retValue = retValue + "</FlyoutAnchor>";
+                }
+                else {
+                    retValue = retValue + ("<Button Command=\"" + item.MenuAction.FunctionName + "\" Id=\"" + item.Key + "\" LabelText=\"" + item.Text + "\"  />");
+                }
+            }
+            retValue = retValue + "         </Controls>  ";
+            retValue = retValue + "     </MenuSection> ";
+            retValue = retValue + "</Menu>";
+            return retValue;
+        }
+        Ribbon.generateMenu = generateMenu;
+        function testGenerateMenu(commandProperties) {
+            debugger;
+            var __menu = new Ribbon.Menu("FirstMenu", "FirstMenu", null, new Ribbon.MenuAction("itlec.itlec_test.itemClickedXrm.Command"));
+            var __menu2 = new Ribbon.Menu("FirstMenu2", "FirstMenu2", null, new Ribbon.MenuAction("itlec.itlec_test.itemClickedXrm.Command"));
+            var _menuArr = [
+                __menu,
+                __menu2
+            ];
+            var _menu = new Ribbon.Menu("FirstMenu", "FirstMenu", null, new Ribbon.MenuAction("itlec.itlec_test.itemClickedXrm.Command"));
+            var _menu2 = new Ribbon.Menu("FirstMenu2", "FirstMenu2", _menuArr, new Ribbon.MenuAction("itlec.itlec_test.itemClickedXrm.Command"));
+            var menuArr = [
+                _menu,
+                _menu2
+            ];
+            var menuStr = generateMenu("itlec.populateQueryCommand", menuArr, "main");
+            alert(menuStr);
+            commandProperties["PopulationXML"] = menuStr;
+        }
+        Ribbon.testGenerateMenu = testGenerateMenu;
+        function OnClick(commandProperties) {
+            // Determine which button was clicked in the menu
+            alert(commandProperties.SourceControlId + ' clicked');
+            window[commandProperties.SourceControlId + "OnClick"]();
+        }
+        Ribbon.OnClick = OnClick;
+    })(Ribbon = ITLecXrm.Ribbon || (ITLecXrm.Ribbon = {}));
 })(ITLecXrm || (ITLecXrm = {}));
 //# sourceMappingURL=ITLecXrmLib.js.map
