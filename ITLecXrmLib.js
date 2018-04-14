@@ -5,7 +5,9 @@ var ITLecXrm;
 /// <reference path="tsdefination/lib.d.ts" />
 (function (ITLecXrm) {
     function getXrm() {
-        return typeof Xrm != "undefined" && typeof Xrm.Page != "undefined" ? Xrm : WindowParent().Xrm;
+        // return typeof Xrm != "undefined" && typeof Xrm.Page != "undefined" ? Xrm : WindowParent().Xrm;
+        var _xrm = (typeof Xrm != "undefined" && typeof Xrm.Page != "undefined") ? Xrm : window.parent.Xrm;
+        return (typeof _xrm != "undefined" && typeof _xrm.Page != "undefined") ? _xrm : window.opener.Xrm;
     }
     ITLecXrm.getXrm = getXrm;
     function getJSON() {
@@ -109,6 +111,54 @@ var ITLecXrm;
         }
         URL.getAllSdkMessagesUrl = getAllSdkMessagesUrl;
     })(URL = ITLecXrm.URL || (ITLecXrm.URL = {}));
+})(ITLecXrm || (ITLecXrm = {}));
+/// <reference path="tsdefination/index.d.ts" />
+/// <reference path="itlecxrm.ts" />
+/// <reference path="url.ts" />
+/// <reference path="tsdefination/lib.d.ts" />
+var ITLecXrm;
+/// <reference path="tsdefination/index.d.ts" />
+/// <reference path="itlecxrm.ts" />
+/// <reference path="url.ts" />
+/// <reference path="tsdefination/lib.d.ts" />
+(function (ITLecXrm) {
+    var WebResource;
+    (function (WebResource) {
+        function getParam(paramName) {
+            var retVal = "";
+            var vals = new Array();
+            if (location.search != "") {
+                vals = location.search.substr(1).split("&");
+                for (var i in vals) {
+                    vals[i] = vals[i].replace(/\+/g, " ").split("=");
+                }
+                //look for the parameter named 'data'
+                for (var i in vals) {
+                    if (vals[i][0].toLowerCase() == "data") {
+                        retVal = _parseDataValue(vals[i][1], paramName);
+                        break;
+                    }
+                }
+            }
+            return retVal;
+        }
+        WebResource.getParam = getParam;
+        function _parseDataValue(datavalue, paramName) {
+            var retVal = "";
+            if (datavalue != "") {
+                var vals = new Array();
+                vals = decodeURIComponent(datavalue).split("&");
+                for (var i in vals) {
+                    vals[i] = vals[i].replace(/\+/g, " ").split("=");
+                    if (vals[i][0] == paramName) {
+                        return vals[i][1];
+                    }
+                }
+            }
+            return retVal;
+        }
+        WebResource._parseDataValue = _parseDataValue;
+    })(WebResource = ITLecXrm.WebResource || (ITLecXrm.WebResource = {}));
 })(ITLecXrm || (ITLecXrm = {}));
 /// <reference path="tsdefination/index.d.ts" />
 /// <reference path="itlecxrm.ts" />
@@ -296,53 +346,6 @@ var ITLecXrm;
         }
         Converter.convertFromLogicalNameToObjectTypeCode = convertFromLogicalNameToObjectTypeCode;
     })(Converter = ITLecXrm.Converter || (ITLecXrm.Converter = {}));
-})(ITLecXrm || (ITLecXrm = {}));
-/// <reference path="tsdefination/index.d.ts" />
-/// <reference path="itlecxrm.ts" />
-/// <reference path="url.ts" />
-/// <reference path="tsdefination/lib.d.ts" />
-var ITLecXrm;
-/// <reference path="tsdefination/index.d.ts" />
-/// <reference path="itlecxrm.ts" />
-/// <reference path="url.ts" />
-/// <reference path="tsdefination/lib.d.ts" />
-(function (ITLecXrm) {
-    var WebResource;
-    (function (WebResource) {
-        function getParam(paramName) {
-            var retVal = "";
-            var vals = new Array();
-            if (location.search != "") {
-                vals = location.search.substr(1).split("&");
-                for (var i in vals) {
-                    vals[i] = vals[i].replace(/\+/g, " ").split("=");
-                }
-                //look for the parameter named 'data'
-                for (var i in vals) {
-                    if (vals[i][0].toLowerCase() == "data") {
-                        retVal = _parseDataValue(vals[i][1], paramName);
-                        break;
-                    }
-                }
-            }
-            return retVal;
-        }
-        WebResource.getParam = getParam;
-        function _parseDataValue(datavalue, paramName) {
-            var retVal = "";
-            if (datavalue != "") {
-                var vals = new Array();
-                vals = decodeURIComponent(datavalue).split("&");
-                for (var i in vals) {
-                    vals[i] = vals[i].replace(/\+/g, " ").split("=");
-                    if (vals[i][0] == paramName) {
-                        return vals[i][1];
-                    }
-                }
-            }
-            return retVal;
-        }
-    })(WebResource = ITLecXrm.WebResource || (ITLecXrm.WebResource = {}));
 })(ITLecXrm || (ITLecXrm = {}));
 /// <reference path="../tsdefination/index.d.ts" />
 /// <reference path="../itlecxrm.ts" />
@@ -734,11 +737,32 @@ var ITLecXrm;
         Ribbon.MenuAction = MenuAction;
     })(Ribbon = ITLecXrm.Ribbon || (ITLecXrm.Ribbon = {}));
 })(ITLecXrm || (ITLecXrm = {}));
+var ITLecXrm;
+(function (ITLecXrm) {
+    var JS;
+    (function (JS) {
+        var JSFacade;
+        (function (JSFacade) {
+            function executeFunctionByName(functionName, context /*, args */) {
+                var args = Array.prototype.slice.call(arguments, 2);
+                var namespaces = functionName.split(".");
+                var func = namespaces.pop();
+                for (var i = 0; i < namespaces.length; i++) {
+                    context = context[namespaces[i]];
+                }
+                return context[func].apply(context, args);
+            }
+            JSFacade.executeFunctionByName = executeFunctionByName;
+        })(JSFacade = JS.JSFacade || (JS.JSFacade = {}));
+    })(JS = ITLecXrm.JS || (ITLecXrm.JS = {}));
+})(ITLecXrm || (ITLecXrm = {}));
 /// <reference path="itlecxrm.ribbon.menu.ts" />
 /// <reference path="../helper/stringfacade.ts" />
+/// <reference path="../js/itlecxrm.js.jsfacade.ts" />
 var ITLecXrm;
 /// <reference path="itlecxrm.ribbon.menu.ts" />
 /// <reference path="../helper/stringfacade.ts" />
+/// <reference path="../js/itlecxrm.js.jsfacade.ts" />
 (function (ITLecXrm) {
     var Ribbon;
     (function (Ribbon) {
@@ -769,29 +793,155 @@ var ITLecXrm;
         Ribbon.generateMenu = generateMenu;
         function testGenerateMenu(commandProperties) {
             debugger;
-            var __menu = new ITLecXrm.Ribbon.Menu("FirstMenu", "FirstMenu", null, new ITLecXrm.Ribbon.MenuAction("itlec.DynamicButtons.Command"));
-            var __menu2 = new ITLecXrm.Ribbon.Menu("FirstMenu2", "FirstMenu2", null, new ITLecXrm.Ribbon.MenuAction("itlec.DynamicButtons.Command"));
+            var __menu = new Ribbon.Menu("FirstMenu", "FirstMenu", null, new Ribbon.MenuAction("itlec.DynamicButtons.Command"));
+            var __menu2 = new Ribbon.Menu("FirstMenu2", "FirstMenu2", null, new Ribbon.MenuAction("itlec.DynamicButtons.Command"));
             var _menuArr = [
                 __menu,
                 __menu2
             ];
-            var _menu = new ITLecXrm.Ribbon.Menu("FirstMenu", "FirstMenu", null, new ITLecXrm.Ribbon.MenuAction("itlec.DynamicButtons.Command"));
-            var _menu2 = new ITLecXrm.Ribbon.Menu("FirstMenu2", "FirstMenu2", _menuArr, new ITLecXrm.Ribbon.MenuAction("itlec.DynamicButtons.Command"));
+            var _menu = new Ribbon.Menu("FirstMenu", "FirstMenu", null, new Ribbon.MenuAction("itlec.DynamicButtons.Command"));
+            var _menu2 = new Ribbon.Menu("FirstMenu2", "FirstMenu2", _menuArr, new Ribbon.MenuAction("itlec.DynamicButtons.Command"));
             var menuArr = [
                 _menu,
                 _menu2
             ];
-            var menuStr = ITLecXrm.Ribbon.generateMenu("itlec.PopulateDynamicQuery.Command", menuArr, "main");
+            var menuStr = generateMenu("itlec.PopulateDynamicQuery.Command", menuArr, "main");
             alert(menuStr);
             commandProperties["PopulationXML"] = menuStr;
         }
         Ribbon.testGenerateMenu = testGenerateMenu;
-        function OnClick(commandProperties) {
+        function onClick(commandProperties) {
+            debugger;
             // Determine which button was clicked in the menu
             alert(commandProperties.SourceControlId + ' clicked');
-            window[commandProperties.SourceControlId + "OnClick"]();
+            // window[commandProperties.SourceControlId+"OnClick"]();
+            ITLecXrm.JS.JSFacade.executeFunctionByName(commandProperties.SourceControlId + "OnClick", window);
         }
-        Ribbon.OnClick = OnClick;
+        Ribbon.onClick = onClick;
     })(Ribbon = ITLecXrm.Ribbon || (ITLecXrm.Ribbon = {}));
+})(ITLecXrm || (ITLecXrm = {}));
+/// <reference path="../ribbon/itlecxrm.ribbon.ts" />
+/// <reference path="../ribbon/itlecxrm.ribbon.menu.ts" />
+var ITLecXrm;
+/// <reference path="../ribbon/itlecxrm.ribbon.ts" />
+/// <reference path="../ribbon/itlecxrm.ribbon.menu.ts" />
+(function (ITLecXrm) {
+    var GoogleMap;
+    (function (GoogleMap) {
+        function generateMenu(commandProperties) {
+            //   debugger; 
+            //Copy this function Code AS IS
+            var menuStr = "";
+            //   alert('hello');
+            /*
+                        var __menu = new ITLecXrm.Ribbon.Menu("ITLecXrm.GoogleMap.selectLocation", "Select Location4", null, new ITLecXrm.Ribbon.MenuAction("itlec.DynamicButtonGoogleMap.Command"));
+                        var __menu2 = new ITLecXrm.Ribbon.Menu("selectLocation", "FirstMenu3", null, new ITLecXrm.Ribbon.MenuAction("itlec.DynamicButtonGoogleMap.Command"));
+                            var _menuArr = [
+                                __menu,
+                                __menu2
+                            ];
+                        var _menu = new ITLecXrm.Ribbon.Menu("itlec.DynamicButtonGoogleMap.Command", "FirstMenu1", null, new ITLecXrm.Ribbon.MenuAction("itlec.DynamicButtonGoogleMap.Command"));
+                        var _menu2 = new ITLecXrm.Ribbon.Menu("FirstMenu2", "FirstMenu2", _menuArr, new ITLecXrm.Ribbon.MenuAction("itlec.DynamicButtonGoogleMap.Command"));
+                            var menuArr = [
+                                _menu,
+                                _menu2
+                            ];*/
+            /*
+ var menuArr = [
+     new ITLecXrm.Ribbon.Menu("ITLecXrm.GoogleMap.selectLocation", "Select Location", null, new ITLecXrm.Ribbon.MenuAction("itlec.DynamicButtonGoogleMap.Command"))
+                ];*/
+            var _menu; //    
+            if (ITLecXrm.GoogleMap.getEntityGoogleConfigRecord()) {
+                _menu = new ITLecXrm.Ribbon.Menu("ITLecXrm.GoogleMap.selectLocation", "Select Location", null, new ITLecXrm.Ribbon.MenuAction("itlec.DynamicButtonGoogleMap.Command"));
+            }
+            else {
+                _menu = new ITLecXrm.Ribbon.Menu("ITLecXrm.GoogleMap.noConfiguration", "No Configration", null, new ITLecXrm.Ribbon.MenuAction("itlec.DynamicButtonGoogleMap.Command"));
+            }
+            var menuArr = [_menu];
+            menuStr = ITLecXrm.Ribbon.generateMenu("itlec.PopulateDynamicQueryGMap.Command", menuArr, "main");
+            commandProperties["PopulationXML"] = menuStr;
+            //    ITLecXrm.GoogleMap.selectLocationOnClick
+        }
+        GoogleMap.generateMenu = generateMenu;
+        function noConfigurationOnClick() {
+            alert("There is no predefined configration for this entity.");
+        }
+        GoogleMap.noConfigurationOnClick = noConfigurationOnClick;
+        function selectLocationOnClick() {
+            alert("Fire FirstMenuOnClick ");
+            var _param = "lat=" + ITLecXrm.GoogleMap.getEntityGoogleConfigRecord().itlec_latitudefieldname + "&lng=" + ITLecXrm.GoogleMap.getEntityGoogleConfigRecord().itlec_longitudefieldname + "&url=" + ITLecXrm.GoogleMap.getEntityGoogleConfigRecord().itlec_mapurlfieldname;
+            var customParameters = encodeURIComponent("lat=address1_latitude&lng=address1_longitude&url=itlec_mapurl");
+            //   ITLecXrm.getXrm().Utility.openWebResource("itlec_googlemapcontrol.html", customParameters);
+            ITLecXrm.getXrm().Utility.openWebResource("itlec_googlemapcontrol.html", customParameters);
+        }
+        GoogleMap.selectLocationOnClick = selectLocationOnClick;
+        var _googleConfigRecord = null;
+        function getGoogleConfigRecord() {
+            if (!_googleConfigRecord) {
+                var alertStr = "";
+                if (_googleConfigRecord == null) {
+                    var serverURL = ITLecXrm.URL.getClientURL();
+                    var recordURL = serverURL + "/api/data/v8.0/itlec_googleconfigs";
+                    var data = ITLecXrm.HttpRequest.getODataObjectResult(recordURL);
+                    if (data && data.value[0]) {
+                        _googleConfigRecord = data.value[0];
+                    }
+                }
+                //Validation
+                if (_googleConfigRecord == null) {
+                    alertStr = alertStr + "There is not GoogleConfigRecord.\n";
+                }
+                else {
+                    if (!_googleConfigRecord.itlec_googlemapapikey) {
+                        alertStr = alertStr + "There is not Google Map API Key.\n";
+                    }
+                    if (!_googleConfigRecord.itlec_googlemaplanguage) {
+                        alertStr = alertStr + "There is not Google Map Language.\n";
+                    }
+                }
+                if (alertStr) {
+                    alert(alertStr);
+                }
+                //End Validation
+            }
+            return _googleConfigRecord;
+        }
+        GoogleMap.getGoogleConfigRecord = getGoogleConfigRecord;
+        var _entityGoogleConfigRecord = null;
+        function getEntityGoogleConfigRecord() {
+            if (!_entityGoogleConfigRecord) {
+                var _entityName = ITLecXrm.Entity.getEntityName();
+                var alertStr = "";
+                if (_entityGoogleConfigRecord == null) {
+                    var serverURL = ITLecXrm.URL.getClientURL();
+                    var recordURL = serverURL + "/api/data/v8.0/itlec_entitygoogleconfigs?$filter=itlec_entityname eq '" + _entityName + "'";
+                    var data = ITLecXrm.HttpRequest.getODataObjectResult(recordURL);
+                    if (data && data.value[0]) {
+                        _entityGoogleConfigRecord = data.value[0];
+                    }
+                }
+                //Validation
+                /*        if (_entityGoogleConfigRecord == null) {
+                            alertStr = alertStr + "There is not Entity Google Config Record.\n";
+                        }
+                        else {
+        
+                            if (!_entityGoogleConfigRecord.itlec_longitudefieldname) {
+                                alertStr = alertStr + "There is not longitude field name.\n";
+                            }
+                            if (!_entityGoogleConfigRecord.itlec_latitudefieldname) {
+                                alertStr = alertStr + "There is not latitude field name.\n";
+                            }
+                        }
+        
+                        if (alertStr) {
+                            alert(alertStr);
+                        }*/
+                //End Validation
+            }
+            return _entityGoogleConfigRecord;
+        }
+        GoogleMap.getEntityGoogleConfigRecord = getEntityGoogleConfigRecord;
+    })(GoogleMap = ITLecXrm.GoogleMap || (ITLecXrm.GoogleMap = {}));
 })(ITLecXrm || (ITLecXrm = {}));
 //# sourceMappingURL=ITLecXrmLib.js.map
