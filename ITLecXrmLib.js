@@ -64,6 +64,17 @@ var ITLecXrm;
                 return text;
             }
             StringFacade.getRandomId = getRandomId;
+            function getPlural(word) {
+                var words;
+                words = "" + word + (ITLecXrm.Helper.StringFacade.endsWith(word, "s") ? "es" : "s"); //  word + ITLecXrm.Helper.StringFacade.endsWith(word, "s") ? "es" : "s";
+                return words;
+            }
+            StringFacade.getPlural = getPlural;
+            function endsWith(word, subString) {
+                var lastIndex = word.lastIndexOf(subString);
+                return (lastIndex !== -1) && (lastIndex + subString.length === word.length);
+            }
+            StringFacade.endsWith = endsWith;
         })(StringFacade = Helper.StringFacade || (Helper.StringFacade = {}));
     })(Helper = ITLecXrm.Helper || (ITLecXrm.Helper = {}));
 })(ITLecXrm || (ITLecXrm = {}));
@@ -160,27 +171,71 @@ var ITLecXrm;
         WebResource._parseDataValue = _parseDataValue;
     })(WebResource = ITLecXrm.WebResource || (ITLecXrm.WebResource = {}));
 })(ITLecXrm || (ITLecXrm = {}));
+var ITLecXrm;
+(function (ITLecXrm) {
+    var Helper;
+    (function (Helper) {
+        var KeyValueClass = /** @class */ (function () {
+            function KeyValueClass() {
+            }
+            return KeyValueClass;
+        }());
+        Helper.KeyValueClass = KeyValueClass;
+    })(Helper = ITLecXrm.Helper || (ITLecXrm.Helper = {}));
+})(ITLecXrm || (ITLecXrm = {}));
+/// <reference path="../tsdefination/index.d.ts" />
+/// <reference path="../itlecxrm.ts" />
+/// <reference path="../url.ts" />
+/// <reference path="../tsdefination/lib.d.ts" />
+var ITLecXrm;
+/// <reference path="../tsdefination/index.d.ts" />
+/// <reference path="../itlecxrm.ts" />
+/// <reference path="../url.ts" />
+/// <reference path="../tsdefination/lib.d.ts" />
+(function (ITLecXrm) {
+    var Form;
+    (function (Form) {
+        var Control;
+        (function (Control) {
+            function setLabel(controlName, label) {
+                ITLecXrm.getXrm().Page.getControl(controlName).setLabel(label);
+            }
+            Control.setLabel = setLabel;
+            function getValue(controlName) {
+                return ITLecXrm.getXrm().Page.getAttribute(controlName).getValue();
+            }
+            Control.getValue = getValue;
+        })(Control = Form.Control || (Form.Control = {}));
+    })(Form = ITLecXrm.Form || (ITLecXrm.Form = {}));
+})(ITLecXrm || (ITLecXrm = {}));
 /// <reference path="tsdefination/index.d.ts" />
 /// <reference path="itlecxrm.ts" />
 /// <reference path="url.ts" />
 /// <reference path="tsdefination/lib.d.ts" />
+/// <reference path="helper/stringfacade.ts" />
 var ITLecXrm;
 /// <reference path="tsdefination/index.d.ts" />
 /// <reference path="itlecxrm.ts" />
 /// <reference path="url.ts" />
 /// <reference path="tsdefination/lib.d.ts" />
+/// <reference path="helper/stringfacade.ts" />
 (function (ITLecXrm) {
     var HttpRequest;
     (function (HttpRequest) {
-        function updateRecordAsync(entityName, recordGuid, recordObj) {
+        function updateRecordAsync(entityName, recordGuid, recordObj, functionName) {
+            debugger;
             var clientUrl = ITLecXrm.getXrm().Page.context.getClientUrl();
+            recordGuid = recordGuid.replace("{", "").replace("}", "");
             var req = new XMLHttpRequest();
-            req.open("PATCH", encodeURI(ITLecXrm.URL.getOdataURL() + "/" + entityName + "s(" + recordGuid + ")"), true);
+            req.open("PATCH", encodeURI(ITLecXrm.URL.getOdataURL() + "/" + ITLecXrm.Helper.StringFacade.getPlural(entityName) + "(" + recordGuid + ")"), true);
             req.setRequestHeader("Accept", "application/json");
             req.setRequestHeader("Content-Type", "application/json; charset=utf-8");
             req.setRequestHeader("OData-MaxVersion", "4.0");
             req.setRequestHeader("OData-Version", "4.0");
             var body = JSON.stringify(recordObj);
+            if (functionName) {
+                req.onreadystatechange = function () { _CallBack(this, functionName); };
+            }
             req.send(body);
         }
         HttpRequest.updateRecordAsync = updateRecordAsync;
@@ -228,6 +283,22 @@ var ITLecXrm;
             return data;
         }
         HttpRequest.getODataObjectResult = getODataObjectResult;
+        //SelectString = address1_latitude,address1_longitude
+        function getRecordById(entityName, entityGuid, selectString) {
+            var _retVal = null;
+            if (entityName && entityGuid) {
+                entityGuid = entityGuid.replace("{", "").replace("}", "");
+                var serverURL = ITLecXrm.URL.getClientURL();
+                var recordURL = serverURL + "/api/data/v8.0/" + ITLecXrm.Helper.StringFacade.getPlural(entityName) + "(" + entityGuid + ")?$select=" + ((selectString) ? selectString : '*');
+                // var recordURL = serverURL + "/api/data/v8.0/itlec_entitygoogleconfigs?$filter=itlec_entityname eq '" + _entityName + "'";
+                var data = ITLecXrm.HttpRequest.getODataObjectResult(recordURL);
+                if (data) {
+                    _retVal = data;
+                }
+            }
+            return _retVal;
+        }
+        HttpRequest.getRecordById = getRecordById;
         function PostAsync(_Url, functionName) {
             var retrieveReq = new XMLHttpRequest();
             retrieveReq.open("POST", _Url, true);
@@ -250,13 +321,19 @@ var ITLecXrm;
         HttpRequest.getAsync = getAsync;
         function _CallBack(retrieveReq, functionNameStr) {
             if (retrieveReq.readyState == 4 /* complete */) {
-                var retrieved = ITLecXrm.getJSON().parse(retrieveReq.responseText); //.d
-                if (retrieved) {
-                    var record = retrieved;
-                    window[functionNameStr](record);
+                try {
+                    var retrieved = ITLecXrm.getJSON().parse(retrieveReq.responseText); //.d
+                    if (retrieved) {
+                        var record = retrieved;
+                        window[functionNameStr](record);
+                    }
+                }
+                catch (err) {
+                    eval(functionNameStr);
                 }
             }
         }
+        HttpRequest._CallBack = _CallBack;
     })(HttpRequest = ITLecXrm.HttpRequest || (ITLecXrm.HttpRequest = {}));
 })(ITLecXrm || (ITLecXrm = {}));
 /// <reference path="..\tsdefination/index.d.ts" />
@@ -391,18 +468,6 @@ var ITLecXrm;
         })(Control = Form.Control || (Form.Control = {}));
     })(Form = ITLecXrm.Form || (ITLecXrm.Form = {}));
 })(ITLecXrm || (ITLecXrm = {}));
-var ITLecXrm;
-(function (ITLecXrm) {
-    var Helper;
-    (function (Helper) {
-        var KeyValueClass = /** @class */ (function () {
-            function KeyValueClass() {
-            }
-            return KeyValueClass;
-        }());
-        Helper.KeyValueClass = KeyValueClass;
-    })(Helper = ITLecXrm.Helper || (ITLecXrm.Helper = {}));
-})(ITLecXrm || (ITLecXrm = {}));
 /// <reference path="tsdefination/index.d.ts" />
 /// <reference path="itlecxrm.ts" />
 /// <reference path="url.ts" />
@@ -445,6 +510,40 @@ var ITLecXrm;
             return data.value;
         }
         Metadata.getAllSdkMessageslName = getAllSdkMessageslName;
+        function getEntitySetName(entityName) {
+            var retVal = "";
+            var url = ITLecXrm.URL.getOdataURL() + "/EntityDefinitions?$select=EntitySetName&$filter=LogicalName eq '" + entityName + "'";
+            var data = ITLecXrm.HttpRequest.getODataObjectResult(url);
+            if (data.value[0] && data.value[0].EntitySetName) {
+                retVal = data.value[0].EntitySetName;
+            }
+            return retVal;
+        }
+        Metadata.getEntitySetName = getEntitySetName;
+        function getEntityMetadataId(entityName) {
+            var retVal = "";
+            var url = ITLecXrm.URL.getOdataURL() + "/EntityDefinitions?$select=MetadataId&$filter=LogicalName eq '" + entityName + "'";
+            var data = ITLecXrm.HttpRequest.getODataObjectResult(url);
+            if (data.value[0] && data.value[0].MetadataId) {
+                retVal = data.value[0].MetadataId;
+            }
+            return retVal.replace("{", "").replace("}", "");
+        }
+        Metadata.getEntityMetadataId = getEntityMetadataId;
+        function getEntityAttributes(entityName) {
+            var attributes = null;
+            //  let url: string = `${ITLecXrm.URL.getOdataURL()}/EntityDefinitions?$select=MetadataId&$filter=LogicalName eq '${entityName}'`;
+            var metadataId = ITLecXrm.Metadata.getEntityMetadataId(entityName);
+            if (metadataId) {
+                var url = ITLecXrm.URL.getOdataURL() + "/EntityDefinitions(" + metadataId + ")?$select=LogicalName&$expand=Attributes($select=LogicalName)";
+                var data = ITLecXrm.HttpRequest.getODataObjectResult(url);
+                if (data.Attributes) {
+                    attributes = data.Attributes;
+                }
+            }
+            return attributes;
+        }
+        Metadata.getEntityAttributes = getEntityAttributes;
     })(Metadata = ITLecXrm.Metadata || (ITLecXrm.Metadata = {}));
 })(ITLecXrm || (ITLecXrm = {}));
 /// <reference path="../tsdefination/index.d.ts" />
@@ -471,8 +570,8 @@ var ITLecXrm;
             (function (TextBox) {
                 function _SetAutoComplete_keyPressFcn(ext, fieldName, arr) {
                     try {
-                        //          var userInput = ITLecXrm.getXrm().Page.getControl(fieldName).getValue();
-                        var userInput = ITLecXrm.Entity.Attribute.getAttribute(fieldName);
+                        var userInput = ITLecXrm.getXrm().Page.getControl(fieldName).getValue();
+                        //  let userInput: String =    ITLecXrm.Entity.Attribute.getAttribute(fieldName);
                         var resultSet = {
                             results: new Array(),
                             commands: {
@@ -492,10 +591,10 @@ var ITLecXrm;
                         var userInputLowerCase = userInput.toLowerCase();
                         for (var i = 0; i < arr.length; i++) {
                             // if (userInputLowerCase === arr[i].name.substring(0, userInputLowerCase.length).toLowerCase()) {
-                            if (arr[i].name.toLowerCase().indexOf(userInputLowerCase) != -1) {
+                            if (arr[i].Key.toLowerCase().indexOf(userInputLowerCase) != -1) {
                                 resultSet.results.push({
                                     id: i,
-                                    fields: [arr[i].name]
+                                    fields: [arr[i].Key]
                                 });
                             }
                             if (resultSet.results.length >= 20)
@@ -514,6 +613,7 @@ var ITLecXrm;
                         console.log(e);
                     }
                 }
+                TextBox._SetAutoComplete_keyPressFcn = _SetAutoComplete_keyPressFcn;
                 function setAutoComplete(fieldName, arr) {
                     /*
                     arr = [
@@ -521,35 +621,37 @@ var ITLecXrm;
                         { name: 'Adventure Works Cycles', code: 'A02' }
                     ];*/
                     var keyPressFcn = function (ext) {
-                        _SetAutoComplete_keyPressFcn(ext, fieldName, arr);
+                        ITLecXrm.Form.Control.TextBox._SetAutoComplete_keyPressFcn(ext, fieldName, arr);
                     };
                     ITLecXrm.getXrm().Page.getControl(fieldName).addOnKeyPress(keyPressFcn);
                 }
                 TextBox.setAutoComplete = setAutoComplete;
                 function setAutoCompleteWithEntityNames(fieldName) {
                     var arr = ITLecXrm.Metadata.getAllEntitiesLogicalName();
-                    //   var newArr = new Array();
-                    var newArr;
-                    arr.forEach(function (item) {
-                        var obj = new ITLecXrm.Helper.KeyValueClass(); //new Object();
-                        obj.Key = item.LogicalName;
-                        obj.Value = item.LogicalName;
-                        newArr.push(obj);
-                    });
-                    setAutoComplete(fieldName, newArr);
+                    if (arr) {
+                        var newArr = new Array();
+                        //  let  newArr : ITLecXrm.Helper.KeyValueClass[];
+                        arr.forEach(function (item) {
+                            var obj = new ITLecXrm.Helper.KeyValueClass(); //new Object();
+                            obj.Key = item.LogicalName;
+                            obj.Value = item.LogicalName;
+                            newArr.push(obj);
+                        });
+                        ITLecXrm.Form.Control.TextBox.setAutoComplete(fieldName, newArr);
+                    }
                 }
                 TextBox.setAutoCompleteWithEntityNames = setAutoCompleteWithEntityNames;
                 function SetAutoCompleteWithAllSdkMSGNames(fieldName) {
                     var arr = ITLecXrm.Metadata.getAllSdkMessageslName();
-                    //  var newArr = new Array();
-                    var newArr;
+                    var newArr = new Array();
+                    //    var newArr: ITLecXrm.Helper.KeyValueClass[];
                     arr.forEach(function (item) {
                         var obj = new ITLecXrm.Helper.KeyValueClass(); // new Object();
                         obj.Key = item.sdkmessageid;
                         obj.Value = item.name;
                         newArr.push(obj);
                     });
-                    setAutoComplete(fieldName, newArr);
+                    ITLecXrm.Form.Control.TextBox.setAutoComplete(fieldName, newArr);
                 }
                 TextBox.SetAutoCompleteWithAllSdkMSGNames = SetAutoCompleteWithAllSdkMSGNames;
                 function HideAutoComplete(fieldName) {
@@ -563,6 +665,20 @@ var ITLecXrm;
                     ITLecXrm.getXrm().Page.getControl(fieldName).addOnKeyPress(keyPressFcn);
                 }
                 TextBox.removeAutoComplete = removeAutoComplete;
+                function setAutoCompleteWithEntityAttributes(fieldName, entityName) {
+                    var arr = ITLecXrm.Metadata.getEntityAttributes(entityName);
+                    if (arr) {
+                        var newArr = new Array();
+                        arr.forEach(function (item) {
+                            var obj = new ITLecXrm.Helper.KeyValueClass(); //new Object();
+                            obj.Key = item.LogicalName;
+                            obj.Value = item.LogicalName;
+                            newArr.push(obj);
+                        });
+                        ITLecXrm.Form.Control.TextBox.setAutoComplete(fieldName, newArr);
+                    }
+                }
+                TextBox.setAutoCompleteWithEntityAttributes = setAutoCompleteWithEntityAttributes;
             })(TextBox = Control.TextBox || (Control.TextBox = {}));
         })(Control = Form.Control || (Form.Control = {}));
     })(Form = ITLecXrm.Form || (ITLecXrm.Form = {}));
@@ -753,6 +869,12 @@ var ITLecXrm;
                 return context[func].apply(context, args);
             }
             JSFacade.executeFunctionByName = executeFunctionByName;
+            function closeWindow() {
+                if (confirm("Do you want to close without saving any changes?")) {
+                    close();
+                }
+            }
+            JSFacade.closeWindow = closeWindow;
         })(JSFacade = JS.JSFacade || (JS.JSFacade = {}));
     })(JS = ITLecXrm.JS || (ITLecXrm.JS = {}));
 })(ITLecXrm || (ITLecXrm = {}));
@@ -792,7 +914,7 @@ var ITLecXrm;
         }
         Ribbon.generateMenu = generateMenu;
         function testGenerateMenu(commandProperties) {
-            debugger;
+            //  debugger;
             var __menu = new Ribbon.Menu("FirstMenu", "FirstMenu", null, new Ribbon.MenuAction("itlec.DynamicButtons.Command"));
             var __menu2 = new Ribbon.Menu("FirstMenu2", "FirstMenu2", null, new Ribbon.MenuAction("itlec.DynamicButtons.Command"));
             var _menuArr = [
@@ -811,20 +933,69 @@ var ITLecXrm;
         }
         Ribbon.testGenerateMenu = testGenerateMenu;
         function onClick(commandProperties) {
-            debugger;
             // Determine which button was clicked in the menu
-            alert(commandProperties.SourceControlId + ' clicked');
+            //      alert(commandProperties.SourceControlId + ' clicked');
             // window[commandProperties.SourceControlId+"OnClick"]();
             ITLecXrm.JS.JSFacade.executeFunctionByName(commandProperties.SourceControlId + "OnClick", window);
         }
         Ribbon.onClick = onClick;
     })(Ribbon = ITLecXrm.Ribbon || (ITLecXrm.Ribbon = {}));
 })(ITLecXrm || (ITLecXrm = {}));
+var ITLecXrm;
+(function (ITLecXrm) {
+    var JS;
+    (function (JS) {
+        var DDLFacade;
+        (function (DDLFacade) {
+            function addItem(ddlName, optionText, optionValue) {
+                var optionControl = (document.getElementById(ddlName));
+                var option = document.createElement("option");
+                option.text = optionText;
+                option.value = optionValue;
+                optionControl.add(option);
+            }
+            DDLFacade.addItem = addItem;
+            function clearDDL(ddlName) {
+                //var _ddl = window.document.getElementById(ddlName);
+                //_ddl.innerHTML = "";
+                var optionControl = (document.getElementById(ddlName));
+                var i;
+                for (i = optionControl.options.length - 1; i >= 0; i--) {
+                    optionControl.remove(i);
+                }
+            }
+            DDLFacade.clearDDL = clearDDL;
+            function setSelectedItem(ddlName, valueToSelect) {
+                var element = document.getElementById(ddlName);
+                element.value = valueToSelect;
+            }
+            DDLFacade.setSelectedItem = setSelectedItem;
+        })(DDLFacade = JS.DDLFacade || (JS.DDLFacade = {}));
+    })(JS = ITLecXrm.JS || (ITLecXrm.JS = {}));
+})(ITLecXrm || (ITLecXrm = {}));
+var ITLecXrm;
+(function (ITLecXrm) {
+    var GoogleMap;
+    (function (GoogleMap) {
+        var LatLng = /** @class */ (function () {
+            function LatLng(_lat, _lng) {
+                this.lat = _lat;
+                this.lng = _lng;
+            }
+            return LatLng;
+        }());
+        GoogleMap.LatLng = LatLng;
+    })(GoogleMap = ITLecXrm.GoogleMap || (ITLecXrm.GoogleMap = {}));
+})(ITLecXrm || (ITLecXrm = {}));
 /// <reference path="../ribbon/itlecxrm.ribbon.ts" />
 /// <reference path="../ribbon/itlecxrm.ribbon.menu.ts" />
+/// <reference path="../httprequest.ts" />
+/// <reference path="itlecxrm.googlemap.latlng.ts" />
 var ITLecXrm;
 /// <reference path="../ribbon/itlecxrm.ribbon.ts" />
 /// <reference path="../ribbon/itlecxrm.ribbon.menu.ts" />
+/// <reference path="../httprequest.ts" />
+/// <reference path="itlecxrm.googlemap.latlng.ts" />
 (function (ITLecXrm) {
     var GoogleMap;
     (function (GoogleMap) {
@@ -864,14 +1035,19 @@ var ITLecXrm;
         }
         GoogleMap.generateMenu = generateMenu;
         function noConfigurationOnClick() {
-            alert("There is no predefined configration for this entity.");
+            //  alert();
+            ITLecXrm.getXrm().Utility.confirmDialog("There is no predefined configration for this entity, Would you like to create new one?", function () {
+                var parameters = {};
+                parameters["itlec_name"] = ITLecXrm.Entity.getEntityName();
+                parameters["itlec_entityname"] = ITLecXrm.Entity.getEntityName();
+                // Open the window.
+                Xrm.Utility.openEntityForm("itlec_entitygoogleconfig", null, parameters);
+            }, null);
         }
         GoogleMap.noConfigurationOnClick = noConfigurationOnClick;
         function selectLocationOnClick() {
-            alert("Fire FirstMenuOnClick ");
             var _param = "lat=" + ITLecXrm.GoogleMap.getEntityGoogleConfigRecord().itlec_latitudefieldname + "&lng=" + ITLecXrm.GoogleMap.getEntityGoogleConfigRecord().itlec_longitudefieldname + "&url=" + ITLecXrm.GoogleMap.getEntityGoogleConfigRecord().itlec_mapurlfieldname;
-            var customParameters = encodeURIComponent("lat=address1_latitude&lng=address1_longitude&url=itlec_mapurl");
-            //   ITLecXrm.getXrm().Utility.openWebResource("itlec_googlemapcontrol.html", customParameters);
+            var customParameters = encodeURIComponent(_param);
             ITLecXrm.getXrm().Utility.openWebResource("itlec_googlemapcontrol.html", customParameters);
         }
         GoogleMap.selectLocationOnClick = selectLocationOnClick;
@@ -942,6 +1118,216 @@ var ITLecXrm;
             return _entityGoogleConfigRecord;
         }
         GoogleMap.getEntityGoogleConfigRecord = getEntityGoogleConfigRecord;
+        function updateRecordLocation(_lat, _lng, _url) {
+            if (confirm("Do you want to save the changes and close the map?")) {
+                var entityName = ITLecXrm.Entity.getEntityName();
+                var entityGuid = ITLecXrm.Entity.getId();
+                var latFieldName = ITLecXrm.GoogleMap.getEntityGoogleConfigRecord().itlec_latitudefieldname;
+                var lngFieldName = ITLecXrm.GoogleMap.getEntityGoogleConfigRecord().itlec_longitudefieldname;
+                var mapUrlFieldName = ITLecXrm.GoogleMap.getEntityGoogleConfigRecord().itlec_mapurlfieldname;
+                var recordObj = {};
+                if (mapUrlFieldName) {
+                    recordObj = (_a = {},
+                        _a[latFieldName] = _lat.toString(),
+                        _a[lngFieldName] = _lng.toString(),
+                        _a[mapUrlFieldName] = _url,
+                        _a);
+                }
+                else {
+                    recordObj = (_b = {},
+                        _b[latFieldName] = _lat.toString(),
+                        _b[lngFieldName] = _lng.toString(),
+                        _b);
+                }
+                ITLecXrm.HttpRequest.updateRecordAsync(entityName, entityGuid, recordObj, "window.close();");
+            }
+            var _a, _b;
+        }
+        GoogleMap.updateRecordLocation = updateRecordLocation;
+        var CurrentRecordLanLng = null;
+        function retrieveCurrentEntityLatLng() {
+            var retVal;
+            if (CurrentRecordLanLng) {
+                retVal = CurrentRecordLanLng;
+            }
+            else {
+                //  ITLecXrm.GoogleMap.retrieveCurrentEntityLatLng().lat
+                var latFieldName = ITLecXrm.GoogleMap.getEntityGoogleConfigRecord().itlec_latitudefieldname;
+                var lngFieldName = ITLecXrm.GoogleMap.getEntityGoogleConfigRecord().itlec_longitudefieldname;
+                if (latFieldName && lngFieldName) {
+                    var entityName = ITLecXrm.Entity.getEntityName();
+                    var entityGuid = ITLecXrm.Entity.getId();
+                    var recordObj = ITLecXrm.HttpRequest.getRecordById(entityName, entityGuid, latFieldName + "," + lngFieldName);
+                    retVal = new GoogleMap.LatLng(recordObj[latFieldName], recordObj[lngFieldName]);
+                    CurrentRecordLanLng = retVal;
+                }
+            }
+            return retVal;
+        }
+        GoogleMap.retrieveCurrentEntityLatLng = retrieveCurrentEntityLatLng;
+    })(GoogleMap = ITLecXrm.GoogleMap || (ITLecXrm.GoogleMap = {}));
+})(ITLecXrm || (ITLecXrm = {}));
+/// <reference path="../ribbon/itlecxrm.ribbon.ts" />
+/// <reference path="../ribbon/itlecxrm.ribbon.menu.ts" />
+/// <reference path="../httprequest.ts" />
+/// <reference path="itlecxrm.googlemap.latlng.ts" />
+var ITLecXrm;
+/// <reference path="../ribbon/itlecxrm.ribbon.ts" />
+/// <reference path="../ribbon/itlecxrm.ribbon.menu.ts" />
+/// <reference path="../httprequest.ts" />
+/// <reference path="itlecxrm.googlemap.latlng.ts" />
+(function (ITLecXrm) {
+    var GoogleMap;
+    (function (GoogleMap) {
+        var Dashboard;
+        (function (Dashboard) {
+            var _entityGoogleConfigRecords = null;
+            function getEntityGoogleConfigRecords() {
+                if (!_entityGoogleConfigRecords) {
+                    if (_entityGoogleConfigRecords == null) {
+                        var serverURL = ITLecXrm.URL.getClientURL();
+                        var recordsURL = serverURL + "/api/data/v8.0/itlec_entitygoogleconfigs?$filter=itlec_mapdashboardstatus eq 100";
+                        var data = ITLecXrm.HttpRequest.getODataObjectResult(recordsURL);
+                        if (data && data.value[0]) {
+                            _entityGoogleConfigRecords = data.value;
+                        }
+                    }
+                }
+                return _entityGoogleConfigRecords;
+            }
+            Dashboard.getEntityGoogleConfigRecords = getEntityGoogleConfigRecords;
+            function fillEntityGoogleConfigRecordsDDL(ddlName) {
+                ITLecXrm.JS.DDLFacade.clearDDL(ddlName);
+                var select = document.getElementById(ddlName);
+                for (var i = 0; i < ITLecXrm.GoogleMap.Dashboard.getEntityGoogleConfigRecords().length; i++) {
+                    var opt = ITLecXrm.GoogleMap.Dashboard.getEntityGoogleConfigRecords()[i];
+                    var el = document.createElement("option");
+                    el.textContent = opt.itlec_name;
+                    el.value = opt.itlec_entitygoogleconfigid;
+                    select.appendChild(el);
+                }
+            }
+            Dashboard.fillEntityGoogleConfigRecordsDDL = fillEntityGoogleConfigRecordsDDL;
+        })(Dashboard = GoogleMap.Dashboard || (GoogleMap.Dashboard = {}));
+    })(GoogleMap = ITLecXrm.GoogleMap || (ITLecXrm.GoogleMap = {}));
+})(ITLecXrm || (ITLecXrm = {}));
+/// <reference path="../ribbon/itlecxrm.ribbon.ts" />
+/// <reference path="../ribbon/itlecxrm.ribbon.menu.ts" />
+/// <reference path="../httprequest.ts" />
+/// <reference path="itlecxrm.googlemap.latlng.ts" />
+var ITLecXrm;
+/// <reference path="../ribbon/itlecxrm.ribbon.ts" />
+/// <reference path="../ribbon/itlecxrm.ribbon.menu.ts" />
+/// <reference path="../httprequest.ts" />
+/// <reference path="itlecxrm.googlemap.latlng.ts" />
+(function (ITLecXrm) {
+    var GoogleMap;
+    (function (GoogleMap) {
+        var Config;
+        (function (Config) {
+            function generateEntityGoogleConfig() {
+                debugger;
+                var itlec_googleconfigURL = ITLecXrm.URL.getOdataURL() + "/itlec_entitygoogleconfigs?$filter=itlec_entityname eq 'itlec_googleconfig'";
+                var data_itlec_googleconfig = ITLecXrm.HttpRequest.getODataObjectResult(itlec_googleconfigURL);
+                if (!data_itlec_googleconfig || data_itlec_googleconfig.value.length < 1) {
+                    var googleMapConfigRecordConfig = {
+                        "itlec_name": "Google Config",
+                        "itlec_entityname": "itlec_googleconfig",
+                        "itlec_latitudefieldname": "itlec_defaultlatitude",
+                        "itlec_longitudefieldname": "itlec_defaultlongitude",
+                        "itlec_displayfieldname": "itlec_name",
+                        "itlec_mapdashboardstatus": "200",
+                        "itlec_mapurlfieldname": "itlec_defaultgooglemapurl"
+                    };
+                    ITLecXrm.HttpRequest.createNewRecord("itlec_entitygoogleconfig", googleMapConfigRecordConfig);
+                    //        alert("Entity Config Map Has Been Created");
+                }
+                var accountURL = ITLecXrm.URL.getOdataURL() + "/itlec_entitygoogleconfigs?$filter=itlec_entityname eq 'account'";
+                var data_account = ITLecXrm.HttpRequest.getODataObjectResult(accountURL);
+                if (!data_account || data_account.value.length < 1) {
+                    var accountRecordConfig = {
+                        "itlec_name": "Account Map",
+                        "itlec_entityname": "account",
+                        "itlec_latitudefieldname": "address1_latitude",
+                        "itlec_longitudefieldname": "address1_longitude",
+                        "itlec_displayfieldname": "name",
+                        "itlec_mapdashboardstatus": "100"
+                    };
+                    ITLecXrm.HttpRequest.createNewRecord("itlec_entitygoogleconfig", accountRecordConfig);
+                    //         alert("Account Map Has Been Created");
+                }
+                var leadURL = ITLecXrm.URL.getOdataURL() + "/itlec_entitygoogleconfigs?$filter=itlec_entityname eq 'lead'";
+                var data_lead = ITLecXrm.HttpRequest.getODataObjectResult(leadURL);
+                if (!data_lead || data_lead.value.length < 1) {
+                    var leadRecordConfig = {
+                        "itlec_name": "Lead Map",
+                        "itlec_entityname": "lead",
+                        "itlec_latitudefieldname": "address1_latitude",
+                        "itlec_longitudefieldname": "address1_longitude",
+                        "itlec_displayfieldname": "name",
+                        "itlec_mapdashboardstatus": "100"
+                    };
+                    ITLecXrm.HttpRequest.createNewRecord("itlec_entitygoogleconfig", leadRecordConfig);
+                    //       alert("Lead Map Has Been Created");
+                }
+                var contactURL = ITLecXrm.URL.getOdataURL() + "/itlec_entitygoogleconfigs?$filter=itlec_entityname eq 'contact'";
+                var data_lead = ITLecXrm.HttpRequest.getODataObjectResult(contactURL);
+                if (!data_lead || data_lead.value.length < 1) {
+                    var contactRecordConfig = {
+                        "itlec_name": "Contact Map",
+                        "itlec_entityname": "contact",
+                        "itlec_latitudefieldname": "address1_latitude",
+                        "itlec_longitudefieldname": "address1_longitude",
+                        "itlec_displayfieldname": "fullname",
+                        "itlec_mapdashboardstatus": "100"
+                    };
+                    ITLecXrm.HttpRequest.createNewRecord("itlec_entitygoogleconfig", contactRecordConfig);
+                    //        alert("Contact Map Has Been Created");
+                }
+                var competitorURL = ITLecXrm.URL.getOdataURL() + "/itlec_entitygoogleconfigs?$filter=itlec_entityname eq 'competitor'";
+                var data_competitor = ITLecXrm.HttpRequest.getODataObjectResult(competitorURL);
+                if (!data_competitor || data_competitor.value.length < 1) {
+                    var competitorRecordConfig = {
+                        "itlec_name": "Competitor Map",
+                        "itlec_entityname": "competitor",
+                        "itlec_latitudefieldname": "address1_latitude",
+                        "itlec_longitudefieldname": "address1_longitude",
+                        "itlec_displayfieldname": "fullname",
+                        "itlec_mapdashboardstatus": "100"
+                    };
+                    ITLecXrm.HttpRequest.createNewRecord("itlec_entitygoogleconfig", competitorRecordConfig);
+                    //    alert("Competitor Map Has Been Created");
+                }
+                document.getElementById('iframeEntityGoogleConfigView').src = document.getElementById('iframeEntityGoogleConfigView').src;
+            }
+            Config.generateEntityGoogleConfig = generateEntityGoogleConfig;
+            function generateGoogleConfig() {
+                var itlec_googleconfigGuid = "";
+                var itlec_googleconfigURL = ITLecXrm.URL.getOdataURL() + "/itlec_googleconfigs";
+                var data_itlec_googleconfig = ITLecXrm.HttpRequest.getODataObjectResult(itlec_googleconfigURL);
+                if (!data_itlec_googleconfig || data_itlec_googleconfig.value.length < 1) {
+                    var googleMapConfigRecordConfig = {
+                        "itlec_name": "Google Config",
+                        "itlec_googlemapapikey": "AIzaSyAtJfAN7Yr5Xm6E6q9qnXKQp5kpwMU53_0",
+                        "itlec_googlemaplanguage": "en",
+                        "itlec_googlemapdashboardlanguage": "en",
+                        "itlec_defaultzoom": 5,
+                        "itlec_dashboarddefaultzoom": 5,
+                        "itlec_defaultlatitude": "26.82055",
+                        "itlec_defaultlongitude": "30.802498",
+                        "itlec_googlemaptype": "roadmap",
+                        "itlec_dashboardgooglemaptype": "roadmap"
+                    };
+                    itlec_googleconfigGuid = ITLecXrm.HttpRequest.createNewRecord("itlec_googleconfig", googleMapConfigRecordConfig);
+                    //  alert("Config Map Has Been Created");
+                }
+                else {
+                    itlec_googleconfigGuid = data_itlec_googleconfig.value[0].itlec_googleconfigid;
+                }
+                window.open(ITLecXrm.URL.getClientURL() + "/main.aspx?etc=10184&extraqs=&id=" + itlec_googleconfigGuid + "&newWindow=true&pagetype=entityrecord");
+            }
+            Config.generateGoogleConfig = generateGoogleConfig;
+        })(Config = GoogleMap.Config || (GoogleMap.Config = {}));
     })(GoogleMap = ITLecXrm.GoogleMap || (ITLecXrm.GoogleMap = {}));
 })(ITLecXrm || (ITLecXrm = {}));
 //# sourceMappingURL=ITLecXrmLib.js.map
